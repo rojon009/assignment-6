@@ -16,8 +16,17 @@ const KEY = '20265487-f5777c8b32d185e30ff9e49de&q';
 
 // show images 
 const showImages = (images) => {
+
   imagesArea.style.display = 'block';
   gallery.innerHTML = '';
+
+  if(images.length < 1) {
+    gallery.innerHTML = 'Sorry could not find any image. Try another keyword for search.';
+    gallery.style.color = 'red';
+    return;
+  }
+
+
   // show gallery title
   galleryHeader.style.display = 'flex';
   images.forEach(image => {
@@ -36,11 +45,18 @@ const getImages = (query) => {
   fetch(`https://pixabay.com/api/?key=${KEY}=${query}&image_type=photo&pretty=true`)
     .then(response => response.json())
     .then(data => {
+      
       showImages(data.hits)
       document.getElementById('spinner').classList.remove('d-flex');
       document.getElementById('spinner').classList.add('d-none');
     })
-    .catch(err => console.log(err))
+    .catch(err => {
+      console.log('ERROR:' + err);
+      document.getElementById('spinner').classList.remove('d-flex');
+      document.getElementById('spinner').classList.add('d-none');
+      gallery.innerHTML = err + '. May be your server is down or your api key is not working.';
+      gallery.style.color = 'red';
+    })
 }
 
   
@@ -59,7 +75,14 @@ const selectItem = (event, img) => {
   }
 }
 
-var timer
+var timer;
+let duration;
+
+  if(durationInput.value > 0) {
+    duration = durationInput.value;
+  } else {
+    duration = 1000;
+  }
 
 durationInput.addEventListener('change', (e)=> {
   if(e.target.value < 0){
@@ -89,13 +112,7 @@ const createSlider = () => {
   // hide image aria
   imagesArea.style.display = 'none';
 
-  let duration;
-
-  if(durationInput.value > 0) {
-    duration = durationInput.value;
-  } else {
-    duration = 1000;
-  }
+  
   
   sliders.forEach(slide => {
     let item = document.createElement('div')
@@ -111,6 +128,17 @@ const createSlider = () => {
     changeSlide(slideIndex);
   }, duration);
 }
+
+//mouse hover pause slider
+sliderContainer.addEventListener('mouseenter', e => {
+  clearInterval(timer);
+})
+sliderContainer.addEventListener('mouseleave', e => {
+  timer = setInterval(function () {
+    slideIndex++;
+    changeSlide(slideIndex);
+  }, duration);
+})
 
 // change slider index 
 const changeItem = index => {
@@ -143,10 +171,17 @@ document.getElementById('image-search').addEventListener('submit', function (e) 
   document.querySelector('.main').style.display = 'none';
   clearInterval(timer);
   const search = document.getElementById('search');
-  getImages(search.value)
+  getImages(search.value);
+  document.getElementById('search').value = '';
   sliders.length = 0;
 })
 
 sliderBtn.addEventListener('click', function () {
   createSlider()
+})
+
+window.addEventListener('keyup', e => {
+  if(e.key === '/') {
+    document.getElementById('search').focus();
+  }
 })
